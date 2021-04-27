@@ -1,6 +1,4 @@
 # Testing Crystal Interactions Finder HH with example script
-import sys 
-sys.path.append('/home/harry/Documents/PhD/crystal_interactions_finder_hh')
 from PYTHON.io import *
 from PYTHON.Atom import *
 from PYTHON.Bond import * 

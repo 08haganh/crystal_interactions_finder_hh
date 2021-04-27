@@ -66,11 +66,10 @@ def assign_atom_interaction_dict(atom):
     return interaction_dict
 
 class Interaction():
-    def __init__(self,atom1,atom2,basis):
+    def __init__(self,atom1,atom2):
         self.atom1 = atom1 
         self.atom2 = atom2 
         self.atoms = [atom1, atom2]
-        self.basis = basis
         self.vdw_sum = self.atom1.vdw_radius + self.atom2.vdw_radius
         self.vdw_contact = self.length() < self.vdw_sum
         self.vdw_distance = self.length() - self.vdw_sum
@@ -117,8 +116,13 @@ class Interaction():
             pi_bond_angle = pi_plane1.plane_angle(pi_plane2)
             # Calcaulating offset
             disp = self.atom2.coordinates - self.atom1.coordinates
-            mol_disp = calc_lstsq_displacement(disp, self.basis)
-            if np.sqrt(np.dot(mol_disp[0],mol_disp[2])) < config['pi_pi_bond']['max_offset']:
+            if self.atom1.has_vectors:
+                basis = self.atom1.vectors
+            else:
+                self.atom1.get_vectors()
+                basis = self.atom1.vectors
+            mol_disp = calc_lstsq_displacement(disp, basis)
+            if np.sqrt(mol_disp[0]**2 + mol_disp[2]**2) < config['pi_pi_bond']['max_offset']:
                 if pi_bond_angle > 90:
                     pi_bond_angle = 180 - pi_bond_angle
                 pi_within_angle = ((pi_bond_angle > config['pi_pi_bond']['min_angle']) & (pi_bond_angle < config['pi_pi_bond']['max_angle']))

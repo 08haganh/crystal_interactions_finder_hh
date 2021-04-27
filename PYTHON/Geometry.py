@@ -86,8 +86,8 @@ def calc_lstsq_displacement(disp,vectors):
     xs.append(x)
     return np.array(xs[0])
 def vector_angle(v1,v2):
-    # returns the angle between two vectors
-    pass
+    theta = np.arccos((v1.dot(v2))/(np.sqrt(v1.dot(v1))*np.sqrt(v2.dot(v2))))
+    return np.degrees(theta)
 def vector_plane_angle(vector, plane):
     # returns the angle made between a vector and a plane
     pass

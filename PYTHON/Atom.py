@@ -18,6 +18,8 @@ Methods
 - get_parent_molecule_index(); return int; return the index of the parent molecule in the crystal
 '''
 import numpy as np
+from .Geometry import *
+
 class Atom():
     def __init__(self,atom_symbol,atom_type,coordinates,label=''):
         self.symbol = atom_symbol
@@ -66,6 +68,7 @@ class RingCentroid(Atom):
         self.bonds = []
         self.neighbours = []
         self.interaction_dict = {}
+        self.has_vectors = False
         try:
             self.mass = atomic_mass[self.symbol]
         except:
@@ -74,6 +77,28 @@ class RingCentroid(Atom):
             self.vdw_radius = vdw_radii[self.symbol]
         except:
             self.vdw_radius = 0
+
+    def get_vectors(self):
+        self.plane = Plane(self.ring_atoms)
+        y_vect = np.array([self.plane.a,self.plane.b,self.plane.c])
+        x_vect = self.ring_atoms[0].coordinates - self.coordinates
+        z_vect = np.cross(x_vect,y_vect)
+        assert np.round(vector_angle(x_vect,y_vect),0) == 90
+        assert np.round(vector_angle(x_vect,z_vect),0) == 90
+        assert np.round(vector_angle(z_vect,y_vect),0) == 90
+        x_mag = np.sqrt(x_vect.dot(x_vect))
+        y_mag = np.sqrt(y_vect.dot(y_vect))
+        z_mag = np.sqrt(z_vect.dot(z_vect))
+        for i, x in enumerate(x_vect):
+            x_vect[i] = x * 1/x_mag
+        for i, y in enumerate(y_vect):
+            y_vect[i] = y * 1/y_mag
+        for i, z in enumerate(z_vect):
+            z_vect[i] = z * 1/z_mag 
+
+        self.vectors = np.vstack([x_vect, y_vect, z_vect])
+        self.has_vectors = True    
+
 
 
 vdw_radii = {

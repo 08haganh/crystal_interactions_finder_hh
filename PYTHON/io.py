@@ -14,15 +14,15 @@ from .Molecule import Molecule
 from .Interaction import *
 import os
 
-def Cif2Supercell(input_path,supercell_size,output_filename='supercell',output_path='.'):
+def Cif2Supercell(input_path,supercell_size,occupancy_tolerance=1, output_filename='supercell',output_path='.'):
     # Read in Cif file and create supercell. Save as XYZ file
     if not os.path.exists(output_path):
         os.mkdir(output_path)
-    read_cif = CifParser(input_path,occupancy_tolerance=4)
+    read_cif = CifParser(input_path,occupancy_tolerance=occupancy_tolerance)
     struc = read_cif.get_structures()[0]
     struc.make_supercell(supercell_size, to_unit_cell=False)
     xyzrep = XYZ(struc)
-    xyzrep.write_file(f"{output_path}/supercell.xyz")  # write supercell to file
+    xyzrep.write_file(f"{output_path}/{output_filename}.xyz")  # write supercell to file
     # Convert supercell to Mol2 format
     obConversion = openbabel.OBConversion()
     obConversion.SetInAndOutFormats("xyz", "mol2")

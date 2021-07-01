@@ -80,14 +80,15 @@ class Molecule():
         # Atm no need as we are working with fully conjugated acene dataset
         if len(self.ring_atoms) == 0:
             self.assign_rings()
+        ring_count = 1
         for atoms, bonds in zip(self.ring_atoms,self.ring_bonds):
             temp_mol = Molecule(atoms,bonds)
             cog = temp_mol.centre_of_geometry()
             bond_lengths = [bond.length() for bond in bonds]
             if np.mean(bond_lengths) < 1.45:
-                pseudo_atom = RingCentroid(ring_atoms=atoms,atom_symbol='ring',atom_type='aromatic',coordinates=cog)
+                pseudo_atom = RingCentroid(ring_atoms=atoms,atom_symbol='ring',atom_type='aromatic',coordinates=cog,label=f'ring{ring_count}')
             else:
-                pseudo_atom = RingCentroid(ring_atoms=atoms,atom_symbol='ring',atom_type='aliphatic',coordinates=cog) 
+                pseudo_atom = RingCentroid(ring_atoms=atoms,atom_symbol='ring',atom_type='aliphatic',coordinates=cog,label=f'ring{ring_count}') 
             self.atoms.append(pseudo_atom)
 
     def get_fused_ring_systems(self):
@@ -103,8 +104,15 @@ class Molecule():
             G.add_edge(bond.atom1,bond.atom2,order=bond.order)
         return G
 
-    def centre_of_geometry(self):
-        atom_positions = np.array([atom.coordinates for atom in self.atoms]).reshape(len(self.atoms),3)
+    def centre_of_geometry(self,ignore_rings=True):
+        atom_positions = []
+        for atom in self.atoms:
+            if ignore_rings:
+                if atom.symbol == 'ring':
+                    continue
+            atom_positions.append(atom.coordinates)
+        atom_positions = np.array(atom_positions)
+        atom_positions = atom_positions.reshape(atom_positions.shape[0],3)
         return np.mean(atom_positions,axis=0)
 
     def test_planarity(self):

@@ -30,14 +30,14 @@ def assign_atom_interaction_dict(atom):
         for bond in atom.bonds:
             all_bonded_atoms.append(bond.atom1.symbol)
             all_bonded_atoms.append(bond.atom2.symbol)
-        if  np.sum(np.isin(np.array(['O','N','F']),np.array(all_bonded_atoms))) > 0:
+        if  np.sum(np.isin(np.array(['O','N','F','S','ring']),np.array(all_bonded_atoms))) > 0:
             interaction_dict['hydrogen_bond']['donor'] = True 
     # Pi bond acceptor and donor
     if ((atom.symbol == 'ring') & (atom.type == 'aromatic')):
         interaction_dict['pi_pi_bond']['acceptor'] = True
         interaction_dict['pi_pi_bond']['donor'] = True
     # Halogen Bond Acceptor
-    if atom.symbol in ['O','N','S','Se','P']:
+    if atom.symbol in ['O','N','S','Se','P','F','Cl','CL','Br','BR','I']:
         interaction_dict['halogen_bond']['acceptor'] = True
     # Halogen Bond Donor
     if atom.symbol in ['F','CL','Cl','BR','Br','I']:

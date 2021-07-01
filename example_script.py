@@ -88,7 +88,7 @@ unit_cell_disps = []
 planes = []
 ## Create a list of molecular planes
 for mol in crystal.molecules:
-    planes.append(Plane(mol.get_backbone().atoms))
+    planes.append(Plane(mol.get_backbone().atoms)) # plane created from acene backbone rather than all atoms of molecule
 ## Loop through all pairs of molecules
 for i, arr1 in enumerate(all_mols[:-1]):
     for j, arr2 in enumerate(all_mols[i+1:],i+1):

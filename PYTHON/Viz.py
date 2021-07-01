@@ -5,20 +5,16 @@ import numpy as np
 import pandas as pd
 
 def network_plot_3D(G, angle, save=False):
+    # from https://www.idtools.com.au/3d-network-graphs-python-mplot3d-toolkit/
     colours = ['black',
                'firebrick',
-               'sandybrown',
-               'orange',
-               'gold',
-               'lawngreen',
-               'forestgreen',
-               'mediumturquoise',
+               'saddlebrown',
+               'darkorange',
+               'darkgreen',
                'dodgerblue',
-               'lightslategray',
-               'navy',
-               'blueviolet',
-               'fuchsia',
-               'pink']
+               'lightslategrey',
+               'midnightblue',
+               'fuchsia']
     # Get node positions
     pos = nx.get_node_attributes(G, 'pos')
     # Get number of nodes
@@ -37,7 +33,7 @@ def network_plot_3D(G, angle, save=False):
     # 3D network plot
     with plt.style.context(('ggplot')):
         
-        fig = plt.figure(figsize=(12,8),dpi=100)
+        fig = plt.figure(figsize=(8,5))
         ax = Axes3D(fig)
         
         # Loop on the pos dictionary to extract the x,y,z coordinates of each node
@@ -55,6 +51,7 @@ def network_plot_3D(G, angle, save=False):
         # Loop on the list of edges to get the x,y,z, coordinates of the connected nodes
         # Those two points are the extrema of the line to be plotted
         edges_encountered = []
+        labels = []
         for i,j in enumerate(G.edges()):
             x = np.array((pos[j[0]][0], pos[j[1]][0]))
             y = np.array((pos[j[0]][1], pos[j[1]][1]))
@@ -66,14 +63,18 @@ def network_plot_3D(G, angle, save=False):
                 edges_encountered.append(edge_types[i])
             else:
                 ax.plot(x, y, z, c=colours[edge_types[i]], alpha=0.5)
-        plt.legend()
+        plt.legend(loc="lower center")
     # Label Diagram
-    ax.set_xlabel('a (Angstrom)')
-    ax.set_ylabel('b (Angstrom)')
-    ax.set_zlabel('c (Angstrom)')
+    #ax.set_xlabel('a (Angstrom)')
+    #ax.set_ylabel('b (Angstrom)')
+    #ax.set_zlabel('c (Angstrom)')
     # Set the initial view
     ax.view_init(30, angle)
-    # Hide the axes
+    # Remove axis, make background colour white and remove grid
+    ax.set_axis_off()
+    ax.set_facecolor("white")
+    # Bonus: To get rid of the grid as well:
+    ax.grid(False)
     
     plt.show()
     
@@ -141,3 +142,49 @@ def create_crystal_graph(molecule_interactions,consider_interactions='all'):
             g.add_edge(idx[0],idx[1],info=info)      
             
     return g
+
+def draw_ellipsoid(crystal, molecule_pair, atom_pairs):
+    
+    intermolecular_atom_pairs = [[pair[0].coordinates,pair[1].coordinates] for pair in atom_pairs]
+    atoms = [atom for pair in atom_pairs for atom in pair]
+    molecules = [crystal.molecules[molecule_pair[0]],crystal.molecules[molecule_pair[1]]]
+    colours = {'H':'white',
+                  'N':'blue',
+                  'C':'grey',
+                  'S':'yellow',
+                  'ring':'purple'}
+
+    with plt.style.context(('ggplot')):
+        fig = plt.figure(figsize=(8,5))
+        ax = fig.gca(projection='3d')
+        # Plot the molecules
+        for mol in molecules:
+            for atom in mol.atoms:
+                x, y, z = atom.coordinates
+                ax.scatter(x,y,z,color = colours[atom.symbol],edgecolor='k')
+                for neighbour in atom.neighbours:
+                    xn, yn, zn = neighbour.coordinates
+                    ax.plot([x,xn],[y,yn],[z,zn],color='grey')
+        # Plot the intermolecular bonds
+        for pair in intermolecular_atom_pairs:
+            x = [pair[0][0],pair[1][0]]
+            y = [pair[0][1],pair[1][1]]
+            z = [pair[0][2],pair[1][2]]
+            ax.plot(x,y,z,color='grey',linestyle='dashed')
+        # Plot ellipsoid
+        A, centroid = mvee(atoms)    
+        U, D, V = la.svd(A)    
+        rx, ry, rz = 1./np.sqrt(D)
+        u, v = np.mgrid[0:2*pi:20j, -pi/2:pi/2:10j]
+
+        E = np.dstack(ellipse(rx,ry,rz))
+        E = np.dot(E,V) + centroid
+        x, y, z = np.rollaxis(E, axis = -1)
+
+        ax.plot_surface(x, y, z, cstride = 1, rstride = 1, alpha = 0.5)
+    ax.set_axis_off()
+    ax.set_facecolor("azure")
+    # Bonus: To get rid of the grid as well:
+    ax.grid(False)
+    plt.tight_layout()
+    plt.show()

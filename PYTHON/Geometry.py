@@ -91,3 +91,77 @@ def vector_angle(v1,v2):
 def vector_plane_angle(vector, plane):
     # returns the angle made between a vector and a plane
     pass
+
+# https://stackoverflow.com/questions/14016898/port-matlab-bounding-ellipsoid-code-to-python
+# Python implementation of the MATLAB function MinVolEllipse, based on the Khachiyan algorithm
+# for both 
+# A is a matrix containing the information regarding the shape of the ellipsoid 
+# to get radii from A you have to do SVD on it, giving U Q and V
+# 1 / sqrt(Q) gives the radii of the ellipsoid
+# problems arise for planar motifs. add two extra points at centroid of +/- 0.00001*plane_normal to overcome
+def mvee(atoms, tol = 0.00001):
+    """
+    Find the minimum volume ellipse around a set of atom objects.
+    Return A, c where the equation for the ellipse given in "center form" is
+    (x-c).T * A * (x-c) = 1
+    [U Q V] = svd(A); 
+    where r = 1/sqrt(Q)
+    V is rotation matrix
+    U is ??? 
+    """
+    points_asarray = np.array([atom.coordinates for atom in atoms])
+    points = np.asmatrix(points_asarray)
+    N, d = points.shape
+    Q = np.column_stack((points, np.ones(N))).T
+    err = tol+1.0
+    u = np.ones(N)/N
+    try:
+        while err > tol:
+            # assert u.sum() == 1 # invariant
+            X = Q * np.diag(u) * Q.T
+            M = np.diag(Q.T * la.inv(X) * Q)
+            jdx = np.argmax(M)
+            step_size = (M[jdx]-d-1.0)/((d+1)*(M[jdx]-1.0))
+            new_u = (1-step_size)*u
+            new_u[jdx] += step_size
+            err = la.norm(new_u-u)
+            u = new_u
+        c = u*points
+        A = la.inv(points.T*np.diag(u)*points - c.T*c)/d    
+    except: # For singular matrix errors i.e. motif is ellipse rather than ellipsoid
+        centroid = np.average(points_asarray,axis=0)
+        plane = Plane(atoms)
+        normal = np.array([plane.a,plane.b,plane.c])
+        norm_mag = np.sqrt(np.dot(normal,normal))
+        for i, norm in enumerate(normal):
+            normal[i] = norm * 1 / norm_mag
+        centroid = np.average(points,axis=0).reshape(-1,3)
+        p1 = centroid + normal*0.00001
+        p2 = centroid - normal*0.00001
+        points_asarray = np.concatenate([points_asarray,p1,p2],axis=0)
+        points = np.asmatrix(points_asarray)
+        N, d = points.shape
+        Q = np.column_stack((points, np.ones(N))).T
+        err = tol+1.0
+        u = np.ones(N)/N
+        while err > tol:
+            # assert u.sum() == 1 # invariant
+            X = Q * np.diag(u) * Q.T
+            M = np.diag(Q.T * la.inv(X) * Q)
+            jdx = np.argmax(M)
+            step_size = (M[jdx]-d-1.0)/((d+1)*(M[jdx]-1.0))
+            new_u = (1-step_size)*u
+            new_u[jdx] += step_size
+            err = la.norm(new_u-u)
+            u = new_u
+        c = u*points
+        A = la.inv(points.T*np.diag(u)*points - c.T*c)/d   
+        
+    return np.asarray(A), np.squeeze(np.asarray(c))
+
+def ellipse(rx,ry,rz):
+    u, v = np.mgrid[0:2*np.pi:20j, -np.pi/2:np.pi/2:10j]
+    x = rx*np.cos(u)*np.cos(v)
+    y = ry*np.sin(u)*np.cos(v)
+    z = rz*np.sin(v)
+    return x,y,z
